@@ -8,58 +8,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
     
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #050505; user-select: none; }
         
-        /* --- 升级后的文字样式 --- */
         #info {
-            position: absolute; 
-            top: 20px; 
-            width: 100%; 
-            text-align: center;
-            /* 使用艺术字体 */
-            font-family: 'Great Vibes', cursive; 
-            font-size: 60px; /* 字号加大 */
-            
-            /* 金色渐变填充 */
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            font-family: 'Great Vibes', cursive; font-size: 60px;
             background: linear-gradient(to bottom, #fffebd, #ffd700); 
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            
-            /* 柔和的金色光晕 */
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 10px #ffaa00);
-            
-            pointer-events: none; 
-            z-index: 10;
-            
-            /* 浮动动画 */
+            pointer-events: none; z-index: 10;
             animation: floatText 3s ease-in-out infinite;
         }
 
         @keyframes floatText {
-            0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 10px #ffaa00); }
-            50% { transform: translateY(-10px); filter: drop-shadow(0 0 20px #ffaa00); }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
-        /* --- 音乐按钮样式 --- */
         #music-btn {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            z-index: 20;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-family: sans-serif;
-            font-size: 14px;
-            backdrop-filter: blur(5px);
-            transition: 0.3s;
+            position: absolute; bottom: 30px; right: 30px; z-index: 20;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 10px 20px; border-radius: 30px; cursor: pointer;
+            font-family: sans-serif; font-size: 14px; backdrop-filter: blur(5px); transition: 0.3s;
         }
-        #music-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
+        #music-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.05); }
+        
+        /* 加载遮罩 */
+        #loader {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: #000; color: #ffd700; display: flex;
+            justify-content: center; align-items: center; font-family: sans-serif;
+            z-index: 999; transition: opacity 1s;
         }
     </style>
     
@@ -73,169 +52,247 @@
     </script>
 </head>
 <body>
+    <div id="loader">正在种植圣诞树...</div>
     <div id="info">Merry Christmas & Happy New Year</div>
-
     <button id="music-btn">🎵 Play Music</button>
-    
-    <audio id="bgm" loop>
-        <source src="https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/win.ogg" type="audio/ogg">
-        </audio>
+    <audio id="bgm" loop><source src="https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/win.ogg" type="audio/ogg"></audio>
     
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        // 引入后期处理核心库 (让画面发光)
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // --- 音乐控制逻辑 ---
-        const musicBtn = document.getElementById('music-btn');
-        const bgm = document.getElementById('bgm');
-        let isPlaying = false;
-
-        musicBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                bgm.pause();
-                musicBtn.textContent = "🎵 Play Music";
-                musicBtn.style.color = "white";
-            } else {
-                bgm.play().then(() => {
-                    musicBtn.textContent = "🎵 Pause";
-                    musicBtn.style.color = "#ffd700"; // 播放时变金色
-                }).catch(e => console.log("播放失败，请交互", e));
-            }
-            isPlaying = !isPlaying;
-        });
-
-        // --- 以下是原有的 3D 场景代码 (保持不变) ---
-
-        // 1. 场景与相机
+        // --- 基础设置 ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.02);
+        scene.fog = new THREE.FogExp2(0x050505, 0.02); // 深夜雾气
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 3, 8);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, 12); // 相机离得稍远一点看全景
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true; // 开启阴影
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 柔和阴影
+        renderer.toneMapping = THREE.ReinhardToneMapping; // 电影感色调
         document.body.appendChild(renderer.domElement);
 
-        // 2. 控制器
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 1.0;
+        controls.autoRotateSpeed = 0.5;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1; // 禁止钻到地下
 
-        // 3. 创建圣诞树
-        function createTree() {
+        // --- 华丽的核心：后期处理 (Bloom Effect) ---
+        const renderScene = new RenderPass(scene, camera);
+        
+        // 辉光参数：分辨率, 强度, 半径, 阈值
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.2; // 发光强度
+        bloomPass.radius = 0.5;   // 发光扩散范围
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- 1. 创建写实风格的树 (程序化生成) ---
+        function createRealisticTree() {
             const treeGroup = new THREE.Group();
 
-            const leaveMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x0f5f0f, roughness: 0.3, metalness: 0.1 
-            });
-
-            const trunkGeo = new THREE.CylinderGeometry(0.5, 0.8, 2, 8);
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d2926 });
+            // A. 树干 (纹理较深)
+            const trunkGeo = new THREE.CylinderGeometry(0.5, 1.2, 4, 12);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2317, roughness: 0.9 });
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.position.y = -1;
+            trunk.position.y = 2;
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
             treeGroup.add(trunk);
 
-            const levels = [
-                { radius: 2.5, height: 3, y: 0.5 },
-                { radius: 2.0, height: 2.5, y: 2.0 },
-                { radius: 1.5, height: 2.0, y: 3.2 },
-                { radius: 1.0, height: 1.5, y: 4.2 }
-            ];
-
-            levels.forEach(level => {
-                const geometry = new THREE.ConeGeometry(level.radius, level.height, 16);
-                const mesh = new THREE.Mesh(geometry, leaveMaterial);
-                mesh.position.y = level.y;
-                treeGroup.add(mesh);
+            // B. 树叶 (使用数百个小圆锥体模拟茂密的针叶)
+            // 这种方法比4个大圆锥体要真实得多
+            const leavesMat = new THREE.MeshStandardMaterial({ 
+                color: 0x084a08, // 深邃的森林绿
+                roughness: 0.8,
+                flatShading: true // 低多边形风格，反光更好看
             });
 
-            const starGeo = new THREE.OctahedronGeometry(0.5, 0);
-            const starMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const count = 350; // 树枝数量
+            for (let i = 0; i < count; i++) {
+                // 随着高度上升，树枝半径变小
+                const y = Math.random() * 8 + 1; // 高度 1~9
+                const widthRatio = (9 - y) / 9;  // 底部宽，顶部窄
+                const radius = 0.2 + Math.random() * 2.5 * widthRatio;
+                const angle = Math.random() * Math.PI * 2;
+
+                // 算出位置
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+
+                // 树枝几何体
+                const size = (Math.random() * 0.5 + 0.5) * widthRatio + 0.2;
+                const geo = new THREE.ConeGeometry(size, size * 2, 4);
+                const mesh = new THREE.Mesh(geo, leavesMat);
+                
+                mesh.position.set(x, y, z);
+                
+                // 让树枝稍微朝外倾斜
+                mesh.lookAt(0, y + 2, 0); 
+                mesh.rotation.x += Math.PI / 2; // 修正朝向
+
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                treeGroup.add(mesh);
+            }
+
+            // C. 树顶大星星 (高亮发光)
+            const starGeo = new THREE.IcosahedronGeometry(0.6, 0);
+            const starMat = new THREE.MeshBasicMaterial({ color: 0xfff0a0 }); // Basic材质不受光照影响，配合Bloom会极亮
             const star = new THREE.Mesh(starGeo, starMat);
-            star.position.y = 5.2;
+            star.position.y = 9.2;
             treeGroup.add(star);
+
+            // D. 装饰彩灯 (Ornaments)
+            // 随机分布的发光小球
+            const bulbGeo = new THREE.SphereGeometry(0.12, 8, 8);
+            const bulbColors = [0xff0000, 0x00ff00, 0x00ccff, 0xffaa00];
             
-            const bulbGeo = new THREE.SphereGeometry(0.15, 8, 8);
-            const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
-            
-            for(let i=0; i<30; i++) {
-                const mat = new THREE.MeshBasicMaterial({ color: colors[Math.floor(Math.random()*colors.length)] });
+            for(let i=0; i<60; i++) {
+                // 螺旋上升算法
+                const y = i * 0.14 + 1.5;
+                if(y > 8.5) break;
+                
+                const widthRatio = (9 - y) / 9;
+                const r = 2.6 * widthRatio + 0.2; // 稍微比树枝外一点
+                const angle = i * 0.8; // 螺旋角度
+
+                const x = Math.cos(angle) * r;
+                const z = Math.sin(angle) * r;
+
+                // 这里的关键是 emissive，让它自己发光
+                const color = bulbColors[i % bulbColors.length];
+                const mat = new THREE.MeshStandardMaterial({
+                    color: color,
+                    emissive: color,     // 自发光颜色
+                    emissiveIntensity: 3.0, // 发光强度 (配合Bloom简直炸裂)
+                    roughness: 0.1
+                });
+                
                 const bulb = new THREE.Mesh(bulbGeo, mat);
-                const angle = i * 0.5; 
-                const y = i * 0.15 + 0.5;
-                const r = 2.2 - i * 0.05; 
-                if (r > 0) {
-                    bulb.position.set(Math.cos(angle)*r, y, Math.sin(angle)*r);
-                    treeGroup.add(bulb);
-                }
+                bulb.position.set(x, y, z);
+                treeGroup.add(bulb);
             }
 
             return { group: treeGroup, star: star };
         }
 
-        const treeObj = createTree();
+        const treeObj = createRealisticTree();
         scene.add(treeObj.group);
 
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(200, 200),
-            new THREE.MeshStandardMaterial({ color: 0x111111 })
-        );
+        // --- 2. 地面 (带反射感) ---
+        const planeGeo = new THREE.CircleGeometry(15, 64);
+        // Standard材质调低roughness会有轻微反光效果，像雪地
+        const planeMat = new THREE.MeshStandardMaterial({ 
+            color: 0x111111, 
+            roughness: 0.8,
+            metalness: 0.3
+        }); 
+        const plane = new THREE.Mesh(planeGeo, planeMat);
         plane.rotation.x = -Math.PI / 2;
-        plane.position.y = -2;
+        plane.receiveShadow = true; // 接收树的影子
         scene.add(plane);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        // --- 3. 更有层次的灯光 ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1); // 环境光很暗
         scene.add(ambientLight);
 
-        const pointLight = new THREE.PointLight(0xffaa00, 50, 20);
-        pointLight.position.set(5, 5, 5);
+        // 主光源 (暖色，模拟路灯或月光)
+        const spotLight = new THREE.SpotLight(0xffeebb, 100);
+        spotLight.position.set(10, 20, 10);
+        spotLight.angle = 0.5;
+        spotLight.penumbra = 0.5;
+        spotLight.castShadow = true;
+        spotLight.shadow.bias = -0.0001;
+        scene.add(spotLight);
+
+        // 补光 (冷色，模拟雪地反光)
+        const pointLight = new THREE.PointLight(0x4444ff, 50, 20);
+        pointLight.position.set(-5, 5, -5);
         scene.add(pointLight);
 
+        // --- 4. 优化版粒子雪花 ---
         const snowGeo = new THREE.BufferGeometry();
-        const snowCount = 3000;
+        const snowCount = 4000;
         const posArray = new Float32Array(snowCount * 3);
-        const velocityArray = [];
+        const velArray = [];
 
         for(let i=0; i<snowCount * 3; i+=3) {
-            posArray[i] = (Math.random() - 0.5) * 50;
-            posArray[i+1] = (Math.random() - 0.5) * 40 + 10;
-            posArray[i+2] = (Math.random() - 0.5) * 50;
-            velocityArray.push((Math.random() * 0.05) + 0.02);
+            posArray[i] = (Math.random() - 0.5) * 40;
+            posArray[i+1] = Math.random() * 20;
+            posArray[i+2] = (Math.random() - 0.5) * 40;
+            velArray.push((Math.random() * 0.05) + 0.02);
         }
         snowGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
         const snowMat = new THREE.PointsMaterial({
-            size: 0.1, color: 0xffffff, transparent: true, opacity: 0.8
+            size: 0.08, color: 0xffffff, transparent: true, opacity: 0.8,
+            blending: THREE.AdditiveBlending // 叠加混合，让雪花在光下更亮
         });
         const snowMesh = new THREE.Points(snowGeo, snowMat);
         scene.add(snowMesh);
 
+        // --- 音乐控制 (保持不变) ---
+        const musicBtn = document.getElementById('music-btn');
+        const bgm = document.getElementById('bgm');
+        let isPlaying = false;
+        musicBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                bgm.pause(); musicBtn.textContent = "🎵 Play Music"; musicBtn.style.color = "white";
+            } else {
+                bgm.play().then(() => {
+                    musicBtn.textContent = "🎵 Pause"; musicBtn.style.color = "#ffd700";
+                }).catch(e => console.log("播放失败", e));
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // --- 动画循环 ---
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
 
+            // 雪花运动
             const positions = snowGeo.attributes.position.array;
             for(let i=1; i<snowCount*3; i+=3) {
-                positions[i] -= velocityArray[(i-1)/3];
-                if (positions[i] < -2) {
-                    positions[i] = 20;
-                }
+                positions[i] -= velArray[(i-1)/3];
+                if (positions[i] < 0) positions[i] = 20; // 循环下落
             }
             snowGeo.attributes.position.needsUpdate = true;
 
-            const time = Date.now() * 0.005;
-            treeObj.star.scale.setScalar(1 + Math.sin(time) * 0.2);
+            // 星星和树的呼吸灯效果
+            const time = Date.now() * 0.002;
+            treeObj.star.rotation.y = time * 0.5;
+            treeObj.star.scale.setScalar(1 + Math.sin(time*2) * 0.1); // 星星闪烁
 
-            renderer.render(scene, camera);
+            // 使用 composer 替代 renderer 进行渲染，启用辉光
+            composer.render();
         }
+        
+        // 移除加载遮罩
+        setTimeout(() => {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1000);
+        }, 1500);
+
         animate();
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight); // 更新辉光尺寸
         });
     </script>
 </body>
