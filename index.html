@@ -5,24 +5,38 @@
     <title>Merry Christmas! 🎄</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
     
     <style>
         body { margin: 0; overflow: hidden; background-color: #020205; user-select: none; }
         
         #info {
             position: absolute; top: 20px; width: 100%; text-align: center;
-            font-family: 'Great Vibes', cursive; font-size: 60px;
-            background: linear-gradient(to bottom, #fffebd, #ffd700); 
+            /* 使用马善政毛笔字体 */
+            font-family: 'Ma Shan Zheng', cursive; 
+            font-size: 60px;
+            /* 字间距稍微拉开一点，更有呼吸感 */
+            letter-spacing: 5px;
+            
+            /* 更加奢华的流光金配色 */
+            background: linear-gradient(45deg, #fffebd, #ffd700, #ffaa00, #fffebd); 
+            background-size: 200% auto;
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px #ffaa00);
+            
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
             pointer-events: none; z-index: 10;
-            animation: floatText 3s ease-in-out infinite;
+            
+            /* 添加流光动画和浮动动画 */
+            animation: floatText 3s ease-in-out infinite, shine 3s linear infinite;
         }
 
         @keyframes floatText {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes shine {
+            to { background-position: 200% center; }
         }
 
         #music-btn {
@@ -36,7 +50,7 @@
         #loader {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: #000; color: #ffd700; display: flex;
-            justify-content: center; align-items: center; font-family: sans-serif;
+            justify-content: center; align-items: center; font-family: 'Ma Shan Zheng', cursive; font-size: 24px;
             z-index: 999; transition: opacity 1s;
         }
     </style>
@@ -51,39 +65,33 @@
     </script>
 </head>
 <body>
-    <div id="loader">圣诞老人正在给驯鹿喂草...</div>
-    <div id="info">Merry Christmas & Happy New Year</div>
-    <button id="music-btn">🎵 Play Music</button>
+    <div id="loader">正在为您准备圣诞惊喜...</div>
+    <div id="info">圣诞快乐 & 新年大吉</div>
+    <button id="music-btn">🎵 播放音乐</button>
+    
     <audio id="bgm" loop>
-    <source src="./music.mp3" type="audio/mpeg"> 
-</audio>
+        <source src="./music.mp3" type="audio/mpeg">
+    </audio>
     
     <script type="module">
-        // --- ⭐ 魔法代码开始：自动获取名字 ⭐ ---
-        // 获取网址链接里 ?to= 后面的内容
+        // --- ⭐ 魔法代码：名字显示逻辑优化 ⭐ ---
         const params = new URLSearchParams(window.location.search);
         let name = params.get('to'); 
         const infoDiv = document.getElementById('info');
         
         if (name) {
-            // 如果链接里有名字，就替换掉默认文字
-            // 自动解码（防止中文乱码）并显示
             name = decodeURIComponent(name);
-            
-            // 这里你可以自由修改显示格式，<br> 代表换行
-            // 比如改成： `祝 ${name} <br> 圣诞快乐!`
-            infoDiv.innerHTML = `Merry Christmas<br>${name}`;
-            
-            // 顺便把浏览器标签页标题也改了
+            // 这里使用了中文排版：祝 [名字] (换行) 圣诞快乐
+            infoDiv.innerHTML = `祝 ${name} <br>圣诞快乐 🍎`;
             document.title = `祝 ${name} 圣诞快乐!`;
             
-            // 如果名字太长（比如中文名），稍微把字号调小一点点防止换行太难看
+            // 如果名字很长，自动缩小字体
             if (name.length > 3) {
-                infoDiv.style.fontSize = "50px";
-                infoDiv.style.lineHeight = "1.2";
+                infoDiv.style.fontSize = "45px";
             }
         }
         // --- 魔法代码结束 ---
+
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -231,56 +239,50 @@
         function createSantaSleigh() {
             const sleighGroup = new THREE.Group();
             
-            // A. 雪橇 (Sleigh) - 金色滑轨
+            // A. 雪橇
             const runnerGeo = new THREE.TorusGeometry(1, 0.05, 8, 30, Math.PI);
             const goldMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.8, roughness: 0.2 });
             const redPaintMat = new THREE.MeshStandardMaterial({ color: 0xaa0000, roughness: 0.3 });
 
-            // 左滑轨
             const runnerL = new THREE.Mesh(runnerGeo, goldMat);
             runnerL.position.set(-0.6, 0.3, 0.5); runnerL.rotation.y = Math.PI / 2;
             sleighGroup.add(runnerL);
-            // 右滑轨
             const runnerR = new THREE.Mesh(runnerGeo, goldMat);
             runnerR.position.set(0.6, 0.3, 0.5); runnerR.rotation.y = Math.PI / 2;
             sleighGroup.add(runnerR);
 
-            // 车身 (Curved Body simulation)
             const bodyBottom = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 1.8), redPaintMat);
             bodyBottom.position.set(0, 0.6, 0.5);
             sleighGroup.add(bodyBottom);
             
-            // 车厢侧板
             const sideGeo = new THREE.BoxGeometry(0.1, 0.6, 1.6);
             const sideL = new THREE.Mesh(sideGeo, redPaintMat); sideL.position.set(-0.55, 0.9, 0.5);
             const sideR = new THREE.Mesh(sideGeo, redPaintMat); sideR.position.set(0.55, 0.9, 0.5);
             sleighGroup.add(sideL); sleighGroup.add(sideR);
 
-            // B. 圣诞老人 (Santa)
+            // B. 圣诞老人
             const santaGroup = new THREE.Group();
             santaGroup.position.set(0, 0.8, 0.2);
             
-            // 身体
             const santaBody = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), redPaintMat);
             santaGroup.add(santaBody);
-            // 脑袋
             const skinMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
             const santaHead = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skinMat);
             santaHead.position.y = 0.5;
             santaGroup.add(santaHead);
-            // 眼睛
+            
             const eyeGeo = new THREE.SphereGeometry(0.03);
             const blackMat = new THREE.MeshBasicMaterial({color: 0x000000});
             const eyeL = new THREE.Mesh(eyeGeo, blackMat); eyeL.position.set(-0.1, 0.55, 0.22);
             const eyeR = new THREE.Mesh(eyeGeo, blackMat); eyeR.position.set(0.1, 0.55, 0.22);
             santaGroup.add(eyeL); santaGroup.add(eyeR);
-            // 胡子
+            
             const beardGeo = new THREE.SphereGeometry(0.15, 16, 16);
             const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
             const beard = new THREE.Mesh(beardGeo, whiteMat);
             beard.position.set(0, 0.45, 0.22);
             santaGroup.add(beard);
-            // 帽子
+            
             const hatGeo = new THREE.ConeGeometry(0.26, 0.5, 16);
             const hat = new THREE.Mesh(hatGeo, redPaintMat);
             hat.position.set(0, 0.8, 0); hat.rotation.x = -0.2;
@@ -288,74 +290,60 @@
             const pompom = new THREE.Mesh(new THREE.SphereGeometry(0.08), whiteMat);
             pompom.position.set(0, 1.05, -0.1);
             santaGroup.add(pompom);
-
             sleighGroup.add(santaGroup);
 
-            // C. 驯鹿 (Reindeer)
+            // C. 驯鹿
             const deerColor = new THREE.MeshStandardMaterial({ color: 0x5c3a21 });
             const antlerColor = new THREE.MeshStandardMaterial({ color: 0x3e2714 });
 
             function createDeer() {
                 const deer = new THREE.Group();
-                // 身体
                 const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.8, 8), deerColor);
                 body.rotation.x = Math.PI / 2; body.position.y = 0.5;
                 deer.add(body);
-                // 脖子
                 const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.4), deerColor);
                 neck.position.set(0, 0.8, 0.3); neck.rotation.x = -0.5;
                 deer.add(neck);
-                // 头
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.4), deerColor);
                 head.position.set(0, 1.0, 0.5);
                 deer.add(head);
-                // 腿
                 const legGeo = new THREE.CylinderGeometry(0.06, 0.05, 0.5);
                 const legFL = new THREE.Mesh(legGeo, deerColor); legFL.position.set(-0.15, 0.25, 0.3);
                 const legFR = new THREE.Mesh(legGeo, deerColor); legFR.position.set(0.15, 0.25, 0.3);
                 const legBL = new THREE.Mesh(legGeo, deerColor); legBL.position.set(-0.15, 0.25, -0.3);
                 const legBR = new THREE.Mesh(legGeo, deerColor); legBR.position.set(0.15, 0.25, -0.3);
                 deer.add(legFL); deer.add(legFR); deer.add(legBL); deer.add(legBR);
-                // 鹿角
                 const antlerGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.4);
                 const antL = new THREE.Mesh(antlerGeo, antlerColor);
                 antL.position.set(-0.15, 1.3, 0.4); antL.rotation.z = 0.5;
                 const antR = new THREE.Mesh(antlerGeo, antlerColor);
                 antR.position.set(0.15, 1.3, 0.4); antR.rotation.z = -0.5;
                 deer.add(antL); deer.add(antR);
-
                 return deer;
             }
 
-            // 创建两排驯鹿 (4只)
             for(let z=0; z<2; z++) {
                 for(let x=-1; x<=1; x+=2) {
                     const deer = createDeer();
                     deer.position.set(x * 0.5, 0, 2.5 + z * 1.5);
                     sleighGroup.add(deer);
-                    
-                    // 鲁道夫红鼻子 (最前面一只)
                     if(z===1 && x=== -1) { 
                          const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06), new THREE.MeshBasicMaterial({color:0xff0000}));
                          nose.position.set(0, 1.0, 0.72);
-                         // 找到鹿头并添加鼻子 (鹿头是第2个添加的子元素? 不一定，按层级找)
                          deer.children[2].add(nose);
                     }
                 }
             }
 
-            // 雪橇灯
             const sleighLight = new THREE.PointLight(0xffaa00, 20, 10);
             sleighLight.position.set(0, 1, 1);
             sleighGroup.add(sleighLight);
-
             return sleighGroup;
         }
-
         const santaObj = createSantaSleigh();
         scene.add(santaObj);
 
-        // --- 4. 魔法拖尾 (Magic Trail) ---
+        // --- 4. 魔法拖尾 ---
         const trailCount = 50;
         const trailGeo = new THREE.BufferGeometry();
         const trailPos = new Float32Array(trailCount * 3);
@@ -395,8 +383,8 @@
         const bgm = document.getElementById('bgm');
         let isPlaying = false;
         musicBtn.addEventListener('click', () => {
-            if (isPlaying) { bgm.pause(); musicBtn.textContent = "🎵 Play Music"; musicBtn.style.color = "white"; } 
-            else { bgm.play().then(() => { musicBtn.textContent = "🎵 Pause"; musicBtn.style.color = "#ffd700"; }); }
+            if (isPlaying) { bgm.pause(); musicBtn.textContent = "🎵 播放音乐"; musicBtn.style.color = "white"; } 
+            else { bgm.play().then(() => { musicBtn.textContent = "🎵 暂停音乐"; musicBtn.style.color = "#ffd700"; }); }
             isPlaying = !isPlaying;
         });
 
@@ -409,7 +397,6 @@
             const time = Date.now() * 0.002;
             const elapsedTime = clock.getElapsedTime();
 
-            // 雪花
             const positions = snowGeo.attributes.position.array;
             for(let i=1; i<snowCount*3; i+=3) {
                 positions[i] -= velArray[(i-1)/3];
@@ -417,34 +404,27 @@
             }
             snowGeo.attributes.position.needsUpdate = true;
 
-            // 圣诞树星星
             treeObj.star.rotation.y = time * 0.5;
             treeObj.star.scale.setScalar(1 + Math.sin(time*2) * 0.1);
 
-            // 圣诞老人飞行
             const flyRadius = 10;
             const flyHeight = 8;
             const flySpeed = 0.3;
-            // 计算当前位置
             const sx = Math.sin(elapsedTime * flySpeed) * flyRadius;
             const sz = Math.cos(elapsedTime * flySpeed) * flyRadius;
             const sy = flyHeight + Math.sin(elapsedTime * 1) * 1.5;
             
             santaObj.position.set(sx, sy, sz);
-            // 计算朝向目标点 (稍微超前一点)
             santaObj.lookAt(
                 Math.sin(elapsedTime * flySpeed + 0.1) * flyRadius, 
                 flyHeight + Math.sin((elapsedTime + 0.1) * 1) * 1.5, 
                 Math.cos(elapsedTime * flySpeed + 0.1) * flyRadius
             );
 
-            // 魔法拖尾逻辑
-            // 将所有点向后移一位
             const trailPositions = trailGeo.attributes.position.array;
             for (let i = (trailCount - 1) * 3; i > 0; i--) {
                 trailPositions[i] = trailPositions[i - 3];
             }
-            // 设置第一个点为当前雪橇位置 (稍微在车尾)
             trailPositions[0] = sx;
             trailPositions[1] = sy + 0.5;
             trailPositions[2] = sz;
@@ -458,9 +438,3 @@
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>
